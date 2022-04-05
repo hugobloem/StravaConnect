@@ -1,20 +1,21 @@
 import requests
 
 class StravaObject(object):
-    def __init__(self, api_token):
+    def __init__(self, api_token, endpoint=''):
         self.base_url = "https://www.strava.com/api/v3/"
         self.api_token = api_token
+        self.endpoint = endpoint
         
-    def get(self, endpoint):
+    def get(self, *args):
         headers = {}
         headers["Authorization"] = f"Bearer {self.api_token}"
-        url = self.base_url + endpoint
+        url = self.base_url + self.endpoint + '/'.join(args)
 
         try:
             resp = requests.get(url, headers=headers)
             assert(resp.status_code == 200)
         except:
-            raise Warning(f"Could not get requested object at {endpoint}")
+            raise Warning(f"Could not get requested object at {self.endpoint}")
 
         return resp.json()
 
@@ -22,13 +23,15 @@ class StravaObject(object):
 class Strava(StravaObject):
 
     def GetAthlete(self):
-        self.athlete()
+        self.athlete = Athlete(self.api_token)
 
 
 class Activities(StravaObject):
+    def __init__(self, api_token):
+        super().__init__(api_token, 'activities')
 
     def getActivityById(self):
-        raise NotImplementedError
+        return self.get('activities', 'id')
 
     def getCommentsByActivityId(self):
         raise NotImplementedError
@@ -48,7 +51,7 @@ class Activities(StravaObject):
 
 class Athlete(StravaObject):
     def __init__(self, api_token):
-        super().__init__(api_token)
+        super().__init__(api_token, 'athlete')
         
         self.getLoggedInAthlete()
 
