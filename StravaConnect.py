@@ -1,4 +1,7 @@
 import requests
+import logging as log
+
+log.basicConfig(level=log.DEBUG)
 
 class StravaObject(object):
     def __init__(self, api_token, endpoint=''):
@@ -9,12 +12,14 @@ class StravaObject(object):
     def get(self, *args):
         headers = {}
         headers["Authorization"] = f"Bearer {self.api_token}"
-        url = self.base_url + self.endpoint + '/'.join(args)
+        url = self.base_url + self.endpoint + '/' + '/'.join(args)
 
         try:
+            log.debug(url)
             resp = requests.get(url, headers=headers)
             assert(resp.status_code == 200)
         except:
+            log.debug(resp.text)
             raise Warning(f"Could not get requested object at {self.endpoint}")
 
         return resp.json()
@@ -56,7 +61,7 @@ class Athlete(StravaObject):
         self.getLoggedInAthlete()
 
     def getLoggedInAthlete(self):
-        resp = self.get('athlete')
+        resp = self.get()
         self.uid = resp['id']
         self.username = resp['username']
         self.resource_state = resp['resource_state']
@@ -79,7 +84,8 @@ class Athlete(StravaObject):
         self.follower = resp['follower']
 
     def getLoggedInAthleteZones(self):
-        raise NotImplementedError
+        resp = self.get('zones')
+        self.zones = resp
         
     def getStats(self):
         raise NotImplementedError
