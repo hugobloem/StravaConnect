@@ -3,12 +3,42 @@ import logging as log
 
 log.basicConfig(level=log.DEBUG)
 
+from aiohttp import ClientSession, ClientResponse
+
+
+class Auth:
+    """Class to make authenticated requests."""
+
+    def __init__(self, websession: ClientSession, host: str, access_token: str):
+        """Initialize the auth."""
+        self.websession = websession
+        self.host = host
+        self.access_token = access_token
+
+    async def request(self, method: str, path: str, **kwargs) -> ClientResponse:
+        """Make a request."""
+        headers = kwargs.get("headers")
+
+        if headers is None:
+            headers = {}
+        else:
+            headers = dict(headers)
+
+        headers["authorization"] = self.access_token
+
+        return await self.websession.request(
+            method, f"{self.host}/{path}", **kwargs, headers=headers,
+        )
+
 class StravaObject(object):
     def __init__(self, api_token, endpoint=''):
         self.base_url = "https://www.strava.com/api/v3/"
         self.api_token = api_token
         self.endpoint = endpoint
-        
+
+        async with aiohttp.ClientSession() as session:
+            self.auth = Auth(session, self.base_url, "1bae07847760d10f1919bede2c8286181c13cb58" )
+
     def get(self, *args):
         headers = {}
         headers["Authorization"] = f"Bearer {self.api_token}"
@@ -16,7 +46,9 @@ class StravaObject(object):
 
         try:
             log.debug(url)
-            resp = requests.get(url, headers=headers)
+            resp = await auth.request("get", "lights")
+            print("HTTP response status code", resp.status)
+            print("HTTP response JSON content", await resp.json())
             assert(resp.status_code == 200)
         except:
             log.debug(resp.text)
